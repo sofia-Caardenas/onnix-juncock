@@ -1,0 +1,85 @@
+/* Estilos para el fondo y la estructura del login */
+.login-background {
+    background-image: url('../img/wooden-table-with-blurred-restaurant-scene.jpg');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Estilos para el contenedor del formulario de login */
+.login-container {
+    background-color: #8e6e50;
+    border-radius: 30px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 350px;
+}
+
+/* Encabezado del login */
+.login-container h2 {
+    margin-bottom: 20px;
+    color: white;
+}
+
+/* Etiquetas del formulario */
+.login-container label {
+    display: block;
+    margin: 10px 0 5px;
+    color: white;
+}
+
+/* Campos de entrada (input) y selección (select) */
+.login-container input, 
+.login-container select {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 10px;
+    background-color: #ffffff80;
+    color: #333;
+}
+
+/* Botón de iniciar sesión */
+.login-container button {
+    width: calc(100% - 20px);
+    padding: 10px;
+    background-color: #ab6b34;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.login-container button:hover {
+    background-color: #362511;
+}
+
+/* Enlaces para registro y volver */
+.login-container a {
+    display: block;
+    margin-top: 10px;
+    color: white;
+    text-decoration: none;
+}
+
+.login-container a:hover {
+    text-decoration: underline;
+}
+
+/* Enlace para volver a la página principal */
+.volver {
+    margin-top: 20px;
+    color: white;
+    text-decoration: none;
+}
+
+.volver:hover {
+    text-decoration: underline;
+}
