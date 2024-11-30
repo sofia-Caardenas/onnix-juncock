@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <link rel="stylesheet" href="../src/assets/css/administrador.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a class="logo"><img src="../src/assets/img/logocafsenablanco.png" width="25%" height="100%" alt="Logo Cafetería"></a>
+        </div>
+        <nav>
+            <ul>
+                <li><a class="tab-button" onclick="showTab('usuarios')">Usuarios</a></li>
+                <li><a class="tab-button" onclick="showTab('productos')">Productos</a></li>
+                <li><a class="tab-button" onclick="showTab('HistorialPedidos')">Historial de Pedidos</a></li>
+            </ul>
+        </nav>
+        <button class="logout-button" onclick="logout()">Cerrar Sesión</button>
+    </header>
+
+    <div class="container">
+        <h1 class="section-title">Panel de Administración</h1>
+        <div id="content">
+            <!-- Sección Usuarios -->
+            <div id="usuarios" class="menu-section active">
+                <h2>Usuarios</h2>
+                <div class="search-bar">
+                    <input type="text" id="search-usuarios" placeholder="Buscar usuarios..." onkeyup="searchTable('usuarios-table', 'search-usuarios')">
+                </div>
+                <table id="usuarios-table">
+                    <thead>
+                        <tr>
+                            <th>Rol</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="pagination">
+                    <button id="prev-page" onclick="changePage(currentPage - 1)">Anterior</button>
+                    <span id="page-info"></span>
+                    <button id="next-page" onclick="changePage(currentPage + 1)">Siguiente</button>
+                </div>
+    
+                <!-- Botón para agregar usuario -->
+                <button onclick="openAddUserModal()">Agregar Usuario</button>
+    
+                <!-- Modal para agregar usuario -->
+                <div id="addUserModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeAddUserModal()">&times;</span>
+                        <h2>Agregar Nuevo Usuario</h2>
+                        <form id="addUserForm">
+                            <label for="nombre">Nombre:</label>
+                            <input type="text" id="nombre" name="nombre" required>
+    
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" name="email" required>
+    
+                            <label for="rol">Rol:</label>
+                            <select id="rol" name="rol" required>
+                                <option value="1">Administrador</option>
+                                <option value="2">Empleado</option>
+                                <option value="3">Cliente</option>
+                            </select>
+    
+                            <button type="submit">Agregar Usuario</button>
+                        </form>
+                    </div>
+                </div>
+    
+                <!-- Modal para editar usuario -->
+                <div id="editUserModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeEditUserModal()">&times;</span>
+                        <h2>Editar Usuario</h2>
+                        <form id="editUserForm">
+                            <input type="hidden" id="edit-user-id">
+                            <label for="edit-nombre">Nombre:</label>
+                            <input type="text" id="edit-nombre" name="nombre" required>
+    
+                            <label for="edit-email">Email:</label>
+                            <input type="email" id="edit-email" name="email" required>
+    
+                            <label for="edit-rol">Rol:</label>
+                            <select id="edit-rol" name="rol" required>
+                                <option value="1">Administrador</option>
+                                <option value="2">Empleado</option>
+                                <option value="3">Cliente</option>
+                            </select>
+    
+                            <button type="submit">Actualizar Usuario</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+            
+
+ <!-- Sección Productos -->
+ <div id="productos" class="menu-section">
+    <h2>Productos</h2>
+    <div class="search-bar">
+        <input type="text" id="search-productos" placeholder="Buscar productos..." onkeyup="searchTable('productos-table', 'search-productos')">
+    </div>
+    <table id="productos-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+<!-- Controles de Paginación para Productos -->
+<div>
+    <button id="prev-page-productos" onclick="changePageProductos(currentPageProductos - 1)">Anterior</button>
+    <span id="page-info-productos"></span>
+    <button id="next-page-productos" onclick="changePageProductos(currentPageProductos + 1)">Siguiente</button>
+</div>
+
+    <button onclick="openAddProductModal()">Agregar Producto</button>
+</div>
+
+<!-- Modal para agregar nuevo producto -->
+<div id="addProductModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('addProductModal')">&times;</span>
+        <h3>Agregar Producto</h3>
+        <input id="new-product-name" type="text" placeholder="Nombre del producto">
+        <input id="new-product-description" type="text" placeholder="Descripción">
+        <input id="new-product-price" type="number" placeholder="Precio">
+        <input id="new-product-stock" type="number" placeholder="Stock">
+        <input id="new-product-image" type="text" placeholder="URL de la Imagen">
+        <select id="new-product-status">
+            <option value="Disponible">Disponible</option>
+            <option value="Agotado">Agotado</option>
+        </select>
+        <button onclick="saveNewProduct()">Agregar Producto</button>
+    </div>
+</div>
+
+ 
+ 
+<!-- Modal para editar producto -->
+<div id="editProductModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('editProductModal')">&times;</span>
+        <h3>Editar Producto</h3>
+        <input type="hidden" id="edit-product-id">
+        
+        <label for="edit-product-name">Nombre:</label>
+        <input type="text" id="edit-product-name" placeholder="Nombre del producto">
+        
+        <label for="edit-product-price">Precio:</label>
+        <input type="number" id="edit-product-price" placeholder="Precio">
+        
+        <label for="edit-product-description">Descripción:</label>
+        <input type="text" id="edit-product-description" placeholder="Descripción">
+        
+        <button onclick="saveEditedProduct()">Guardar Cambios</button>
+    </div>
+</div>
+
+ <!-- Historial de pedidos -->
+ <div id="HistorialPedidos" class="menu-section">
+    <h2>HistorialPedidos</h2>
+    <div class="search-bar">
+        <input type="text" id="search-HistorialPedidos" placeholder="Buscar Pedidos..." onkeyup="searchTable('HistorialPedidos-table', 'search-HistorialPedidos')">
+    </div>
+        <table id="HistorialPedidos-table">
+            <thead>
+                <tr>
+                    <th>idHistorial</th>
+                    <th>idUsuario</th>
+                    <th>idPedido</th>
+                    <th>FechaPedido</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+
+ <footer>
+    <p>&copy; 2024 Onix. Todos los derechos reservados.</p>
+</footer>
+<script>
+    let currentPageProductos = 1;
+    const recordsPerPageProductos = 2;
+    let productosData = [];
+
+    // Función para llenar la tabla de productos
+    function llenarTablaProductos(data) {
+        productosData = data;
+        renderTableProductos();
+    }
+
+    // Función para renderizar la tabla de productos según la página actual
+    function renderTableProductos() {
+        const tabla = document.getElementById('productos-table').getElementsByTagName('tbody')[0];
+        tabla.innerHTML = '';
+
+        const start = (currentPageProductos - 1) * recordsPerPageProductos;
+        const end = start + recordsPerPageProductos;
+        const paginatedData = productosData.slice(start, end);
+
+        paginatedData.forEach(producto => {
+            const fila = tabla.insertRow();
+            fila.insertCell(0).textContent = producto.nombre;
+            fila.insertCell(1).textContent = producto.precio;
+            fila.insertCell(2).textContent = producto.descripcion;
+            fila.insertCell(3).innerHTML = `<button onclick="openEditProductModal(${producto.id}, '${producto.nombre}', ${producto.precio}, '${producto.descripcion}')">Editar</button>`;
+        });
+
+        document.getElementById('page-info-productos').textContent = `Página ${currentPageProductos} de ${Math.ceil(productosData.length / recordsPerPageProductos)}`;
+        document.getElementById('prev-page-productos').disabled = currentPageProductos === 1;
+        document.getElementById('next-page-productos').disabled = currentPageProductos === Math.ceil(productosData.length / recordsPerPageProductos);
+    }
+
+    // Cambiar de página
+    function changePageProductos(page) {
+        const totalPages = Math.ceil(productosData.length / recordsPerPageProductos);
+        if (page < 1 || page > totalPages) return;
+        currentPageProductos = page;
+        renderTableProductos();
+    }
+
+    // Obtener los datos de los productos
+    fetch('http://localhost:8080/api/v1/Productos/getProductos')
+        .then(response => response.json())
+        .then(data => llenarTablaProductos(data))
+        .catch(error => console.error('Error al obtener los datos de productos:', error));
+
+    // Función para buscar productos en la tabla
+    function searchTableProductos(tableId, searchInputId) {
+        const input = document.getElementById(searchInputId);
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById(tableId);
+        const tr = table.getElementsByTagName("tr");
+
+        for (let i = 0; i < tr.length; i++) {
+            const tdNombre = tr[i].getElementsByTagName("td")[0];
+            const tdPrecio = tr[i].getElementsByTagName("td")[1];
+            if (tdNombre || tdPrecio) {
+                const txtValueNombre = tdNombre.textContent || tdNombre.innerText;
+                const txtValuePrecio = tdPrecio.textContent || tdPrecio.innerText;
+                if (txtValueNombre.toLowerCase().indexOf(filter) > -1 || txtValuePrecio.toLowerCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    // Lógica de cierre del modal al hacer clic fuera de él
+    window.onclick = function(event) {
+        const addModal = document.getElementById('addProductModal');
+        const editModal = document.getElementById('editProductModal');
+        if (event.target === addModal) {
+            closeAddProductModal();
+        }
+        if (event.target === editModal) {
+            closeEditProductModal();
+        }
+    };
+
+    // Función de búsqueda en la tabla
+    function searchTable(tableId, searchInputId) {
+        const input = document.getElementById(searchInputId);
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById(tableId);
+        const tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            const tdNombre = tr[i].getElementsByTagName("td")[0];
+            const tdPrecio = tr[i].getElementsByTagName("td")[1];
+            if (tdNombre || tdPrecio) {
+                const txtValueNombre = tdNombre.textContent || tdNombre.innerText;
+                const txtValuePrecio = tdPrecio.textContent || tdPrecio.innerText;
+                if (txtValueNombre.toLowerCase().indexOf(filter) > -1 || txtValuePrecio.toLowerCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    // Llamar a la función para cargar los productos al cargar la página
+    document.addEventListener("DOMContentLoaded", function() {
+        loadProductos();
+    });
+</script>
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Función para obtener y mostrar los productos
+        function loadProductos() {
+            fetch("http://localhost:8080/api/v1/Productos/getProductos")
+                .then(response => response.json())
+                .then(data => {
+                    const productosTable = document.querySelector("#productos-table tbody");
+                    productosTable.innerHTML = ''; // Limpiar la tabla
+
+                    data.forEach(producto => {
+                        const row = document.createElement("tr");
+                        row.setAttribute("data-id", producto.id);
+                        row.innerHTML = `
+                            <td>${producto.nombre}</td>
+                            <td>${producto.precio}</td>
+                            <td>${producto.descripcion}</td>
+                            <td>
+                                <button onclick="openEditProductModal(${producto.id}, '${producto.nombre}', ${producto.precio}, '${producto.descripcion}')">Editar</button>
+                            </td>
+                        `;
+                        productosTable.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error al cargar los productos:', error));
+        }
+
+        // Llamar a la función para cargar los productos al cargar la página
+        loadProductos();
+    });
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        // Función para obtener y mostrar los productos
+        function loadHistorialPedidos() {
+            fetch("http://demo4284921.mockable.io/api/v1/HistorialPedidos/getHistorialPedidos")
+                .then(response => response.json())
+                .then(data => {
+                    const HistorialPedidosTable = document.querySelector("#HistorialPedidos-table tbody");
+                    HistorialPedidosTable.innerHTML = ''; // Limpiar la tabla
+
+                    // Iterar sobre los productos y agregarlos a la tabla
+                    data.forEach(HistorialPedidos => {
+                        const row = document.createElement("tr");
+                        row.setAttribute("data-id", HistorialPedidos.id);
+                        row.innerHTML = `
+                            <td>${HistorialPedidos.idHistorial}</td>
+                            <td>${HistorialPedidos.idUsuario}</td>
+                            <td>${HistorialPedidos.idPedido}</td>
+                            <td>${HistorialPedidos.fechaPedido}</td>
+                            <td>${HistorialPedidos.estado}</td>
+
+                        `;
+                        HistorialPedidosTable.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error al cargar los productos:', error));
+        }
+
+        // Llamar a la función para cargar los productos al cargar la página
+        loadHistorialPedidos();
+        
+    });
+
+    // Función para buscar productos en la tabla
+    function searchTable(tableId, inputId) {
+        const input = document.getElementById(inputId).value.toLowerCase();
+        const table = document.getElementById(tableId);
+        const rows = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName("td");
+            let found = false;
+
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j].innerText.toLowerCase().includes(input)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            rows[i].style.display = found ? "" : "none";
+        }
+    }
+
+    // Función para abrir el modal de editar producto y precargar los datos
+    function openEditProductModal(id, nombre, precio, descripcion) {
+        document.getElementById("edit-product-id").value = id;
+        document.getElementById("edit-product-name").value = nombre;
+        document.getElementById("edit-product-price").value = precio;
+        document.getElementById("edit-product-description").value = descripcion;
+        document.getElementById("editProductModal").style.display = "block";
+    }
+
+    // Función para guardar los cambios del producto editado
+    function saveEditedProduct() {
+        const id = document.getElementById("edit-product-id").value;
+        const nombre = document.getElementById("edit-product-name").value;
+        const precio = document.getElementById("edit-product-price").value;
+        const descripcion = document.getElementById("edit-product-description").value;
+
+        fetch("http://localhost:8080/api/v1/Productos/actualizarProducto", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                id: id,
+                nombre: nombre,
+                precio: precio,
+                descripcion: descripcion
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert("Producto actualizado exitosamente");
+            location.reload();
+            closeModal('editProductModal');
+
+            // Actualizar el producto en la tabla sin recargar
+            const row = document.querySelector(`#productos-table tbody tr[data-id='${id}']`);
+            row.innerHTML = `
+                <td>${nombre}</td>
+                <td>${precio}</td>
+                <td>${descripcion}</td>
+                <td>
+                    <button onclick="openEditProductModal(${id}, '${nombre}', ${precio}, '${descripcion}')">Editar</button>
+                </td>
+            `;
+        })
+        .catch(error => console.error("Error al actualizar el producto:", error));
+    }
+// Función para abrir el modal de agregar producto
+function openAddProductModal() {
+    document.getElementById("addProductModal").style.display = "block";
+}
+
+// Función para agregar un nuevo producto
+function saveNewProduct() {
+    // Cerrar el modal inmediatamente
+    closeModal("addProductModal");
+
+    // Obtener valores del formulario
+    const nombre = document.getElementById("new-product-name").value.trim();
+    const descripcion = document.getElementById("new-product-description").value.trim();
+    const precio = parseFloat(document.getElementById("new-product-price").value);
+    const stock = parseInt(document.getElementById("new-product-stock").value);
+    const fechaAgregado = new Date().toISOString().slice(0, 10); // Cambiado a camelCase
+    const rutaImagen = document.getElementById("new-product-image").value.trim();
+    const estado = document.getElementById("new-product-status").value.trim();
+
+    // Validar campos
+    if (!nombre || !descripcion || isNaN(precio) || isNaN(stock) || !rutaImagen || !estado) {
+        toast.error("Todos los campos son obligatorios. Asegúrate de completarlos correctamente.");
+        return;
+    }
+
+    const producto = {
+        nombre,
+        descripcion,
+        precio,
+        stock,
+        fechaAgregado,
+        rutaImagen,
+        estado
+    };
+
+    // Enviar la solicitud para crear un producto
+    fetch("http://localhost:8080/api/v1/Productos/crearProductos", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(producto)
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(errorText => {
+                    throw new Error(`Error al agregar el producto: ${errorText}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            toast.success("Producto agregado exitosamente");
+            agregarFilaProducto(data); // Agregar producto a la tabla
+        })
+        .catch(error => {
+            console.error("Error al agregar el producto:", error);
+            toast.error(`Hubo un error al agregar el producto: ${error.message}`);
+        })
+        .finally(() => {
+            // Limpiar los campos del formulario tras el intento de agregar el producto
+            limpiarFormularioAgregarProducto();
+        });
+}
+
+// Función para cerrar el modal
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = "none";
+}
+
+// Función para limpiar el formulario después de cerrar el modal
+function limpiarFormularioAgregarProducto() {
+    document.getElementById("new-product-name").value = "";
+    document.getElementById("new-product-description").value = "";
+    document.getElementById("new-product-price").value = "";
+    document.getElementById("new-product-stock").value = "";
+    document.getElementById("new-product-image").value = "";
+    document.getElementById("new-product-status").value = "";
+}
+</script>
+
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        let currentPage = 1;
+        const recordsPerPage = 2;
+        let usuariosData = [];
+
+        // Función para llenar la tabla de usuarios
+        function llenarTabla(data) {
+            usuariosData = data;
+            renderTable();
+        }
+
+        // Función para renderizar la tabla según la página actual
+        function renderTable() {
+            const tabla = document.getElementById('usuarios-table').getElementsByTagName('tbody')[0];
+            tabla.innerHTML = '';
+
+            const start = (currentPage - 1) * recordsPerPage;
+            const end = start + recordsPerPage;
+            const paginatedData = usuariosData.slice(start, end);
+
+            paginatedData.forEach(usuario => {
+                const fila = tabla.insertRow();
+                fila.insertCell(0).textContent = usuario.roles.nombre;
+                fila.insertCell(1).textContent = usuario.nombre;
+                fila.insertCell(2).textContent = usuario.email;
+                fila.insertCell(3).innerHTML = `<button onclick="editarUsuario(${usuario.id})">Editar</button>`;
+            });
+
+            document.getElementById('page-info').textContent = `Página ${currentPage} de ${Math.ceil(usuariosData.length / recordsPerPage)}`;
+            document.getElementById('prev-page').disabled = currentPage === 1;
+            document.getElementById('next-page').disabled = currentPage === Math.ceil(usuariosData.length / recordsPerPage);
+        }
+
+        // Cambiar de página
+        function changePage(page) {
+            const totalPages = Math.ceil(usuariosData.length / recordsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable();
+        }
+
+        // Obtener los datos de los usuarios
+        fetch('http://localhost:8080/api/v1/Usuarios/getUsuarios')
+            .then(response => response.json())
+            .then(data => llenarTabla(data))
+            .catch(error => console.error('Error al obtener los datos de usuarios:', error));
+
+// Abrir modal de agregar usuario
+function openAddUserModal() {
+    document.getElementById('addUserModal').style.display = 'block';
+}
+
+// Cerrar modal de agregar usuario
+function closeAddUserModal() {
+    document.getElementById('addUserModal').style.display = 'none';
+}
+
+// Agregar nuevo usuario
+document.getElementById('addUserForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    // Obtén los valores del formulario
+    const nombre = document.getElementById('nombre').value;
+    const email = document.getElementById('email').value;
+    const idRol = document.getElementById('rol').value; // ID del rol seleccionado
+
+    // Construye la solicitud con el formato adecuado
+    fetch('http://localhost:8080/api/v1/Usuarios/crearUsuario', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            nombre: nombre,
+            email: email,
+            clave: "passwordbase123", // Clave predeterminada
+            estado: "Activo",         // Estado predeterminado
+            roles: {
+                id: parseInt(idRol) // El rol debe ser un objeto con el ID
+            }
+        })
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al agregar el usuario');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Notifica éxito y actualiza la tabla
+            toastr.success("Usuario agregado exitosamente");
+            renderTable(); // Refresca la tabla para mostrar al nuevo usuario
+            closeAddUserModal();
+            document.getElementById('addUserForm').reset(); // Limpia el formulario
+        })
+        .catch(error => {
+            console.error("Error al agregar el usuario:", error);
+            toastr.error("Error al agregar el usuario. Verifica los datos.");
+        });
+});
+ // Función para abrir el modal de editar usuario y precargar los datos
+function editarUsuario(id) {
+    const usuario = usuariosData.find(u => u.id === id);
+    if (usuario) {
+        // Verifica que los elementos se encuentren antes de asignarles valores
+        console.log(document.getElementById('edit-user-id'));  // Verifica que el elemento existe
+        console.log(usuario);  // Verifica que los datos del usuario estén correctos
+
+        // Asigna los valores a los campos del formulario
+        document.getElementById('edit-user-id').value = usuario.id;
+        document.getElementById('edit-nombre').value = usuario.nombre;
+        document.getElementById('edit-email').value = usuario.email;
+        document.getElementById('edit-rol').value = usuario.roles.id;
+        document.getElementById('editUserModal').style.display = 'block';
+    }
+}
+
+// Función para cerrar el modal de edición
+function closeEditUserModal() {
+    document.getElementById('editUserModal').style.display = 'none';
+}
+
+// Función para guardar los cambios del usuario editado
+function saveEditedUser(event) {
+    event.preventDefault();  // Evita que el formulario recargue la página
+
+    const id = document.getElementById('edit-user-id').value;
+    const nombre = document.getElementById('edit-nombre').value;
+    const email = document.getElementById('edit-email').value;
+    const idRol = document.getElementById('edit-rol').value;
+
+    // Verifica los valores antes de enviar la solicitud
+    console.log({id, nombre, email, idRol});
+
+    fetch('http://localhost:8080/api/v1/Usuarios/actualizarUsuario', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            id: id,
+            nombre: nombre,
+            email: email,
+            id_Rol: idRol
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert("Usuario actualizado exitosamente");
+        location.reload();
+        closeEditUserModal();
+
+        // Actualiza el usuario en la tabla sin recargar la página
+        const row = document.querySelector(`#usuarios-table tbody tr[data-id='${id}']`);
+        row.innerHTML = `
+            <td>${nombre}</td>
+            <td>${email}</td>
+            <td>${idRol}</td>
+            <td>
+                <button onclick="editarUsuario(${id})">Editar</button>
+            </td>
+        `;
+    })
+    .catch(error => console.error("Error al actualizar el usuario:", error));
+}
+
+// Asegúrate de asignar el evento al formulario de edición de usuario
+document.getElementById('editUserForm').addEventListener('submit', saveEditedUser);
+
+        // Lógica de cierre del modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            const addModal = document.getElementById('addUserModal');
+            const editModal = document.getElementById('editUserModal');
+            if (event.target === addModal) {
+                closeAddUserModal();
+            }
+            if (event.target === editModal) {
+                closeEditUserModal();
+            }
+        };
+
+        // Función de búsqueda en la tabla
+        function searchTable(tableId, searchInputId) {
+            const input = document.getElementById(searchInputId);
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById(tableId);
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                const tdNombre = tr[i].getElementsByTagName("td")[1];
+                const tdEmail = tr[i].getElementsByTagName("td")[2];
+                if (tdNombre || tdEmail) {
+                    const txtValueNombre = tdNombre.textContent || tdNombre.innerText;
+                    const txtValueEmail = tdEmail.textContent || tdEmail.innerText;
+                    if (txtValueNombre.toLowerCase().indexOf(filter) > -1 || txtValueEmail.toLowerCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }       
+            }
+        }
+
+        function logout() {
+            toastr.info('Sesión cerrada.', 'Información');
+            window.location.href = "../modules/login.html"; // Redirige a la página de login
+        }
+
+        // Función para mostrar la sección correspondiente
+        function showTab(tabId) {
+            const sections = document.querySelectorAll('.menu-section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+                if (section.id === tabId) {
+                    section.classList.add('active');
+                }
+            });
+        }
+
+
+    // Lógica de cierre del modal al hacer clic fuera de él
+    window.onclick = function(event) {
+        const addModal = document.getElementById('addProductModal');
+        const editModal = document.getElementById('editProductModal');
+        if (event.target === addModal) {
+            closeAddProductModal();
+        }
+        if (event.target === editModal) {
+            closeEditProductModal();
+        }
+    };
+
+    // Función de búsqueda en la tabla
+    function searchTable(tableId, searchInputId) {
+        const input = document.getElementById(searchInputId);
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById(tableId);
+        const tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            const tdNombre = tr[i].getElementsByTagName("td")[0];
+            const tdPrecio = tr[i].getElementsByTagName("td")[1];
+            if (tdNombre || tdPrecio) {
+                const txtValueNombre = tdNombre.textContent || tdNombre.innerText;
+                const txtValuePrecio = tdPrecio.textContent || tdPrecio.innerText;
+                if (txtValueNombre.toLowerCase().indexOf(filter) > -1 || txtValuePrecio.toLowerCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }       
+        }
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+    // Función para mostrar la pestaña correspondiente
+    function showTab(tabId) {
+        const sections = document.querySelectorAll(".menu-section");
+        sections.forEach(section => {
+            section.classList.remove("active");
+        });
+        document.getElementById(tabId).classList.add("active");
+
+        // Cargar el historial de pedidos si la pestaña de historial está activa
+        if (tabId === "historial") {
+            loadHistorialPedidos();
+        }
+    }
+
+    // Función para obtener y mostrar el historial de pedidos
+
+});
+</script>
+
+</body>
+</html>
+
+

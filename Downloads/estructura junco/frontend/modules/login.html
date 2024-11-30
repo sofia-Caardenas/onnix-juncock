@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="../src/assets/css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .password-container {
+            position: relative;
+        }
+
+        .password-container input {
+            width: 100%;
+            padding-right: 40px;
+        }
+
+        .password-container i {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <h2>Bienvenido</h2>
+        <form id="loginForm">
+            <label for="email">Correo electrónico <span style="color: red;">*</span></label>
+            <input type="email" id="email" name="email" placeholder="Correo electrónico" required>
+
+            <label for="password">Contraseña <span style="color: red;">*</span></label>
+            <div class="password-container">
+                <input type="password" id="password" name="password" placeholder="Contraseña" required>
+                <i class="fas fa-eye" id="togglePassword"></i>
+            </div>
+
+            <button type="submit">Iniciar sesión</button>
+        </form>
+
+        <a href="../modules/registro.html">¿No tienes Cuenta? Regístrate</a>
+        <a class="volver" href="../public/index.html">Volver</a>
+    </div>
+
+    <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordField = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordField.type === 'password' ? 'text' : 'password';
+            passwordField.type = type;
+            this.classList.toggle('fa-eye-slash');
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Validaciones básicas
+            if (!email || !password) {
+                alert('Todos los campos son obligatorios');
+                return;
+            }
+
+            // Verificación de formato del correo
+            const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailPattern.test(email)) {
+                alert('Formato de correo electrónico no válido');
+                return;
+            }
+
+            // Realiza la solicitud POST a la API
+            fetch('http://localhost:8080/api/v1/Usuarios/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: email,
+                    clave: password
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Credenciales incorrectas o el usuario no está registrado');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data) || data.length === 0) {
+                        alert('Credenciales incorrectas o el usuario no está registrado');
+                        return;
+                    }
+
+                    const user = data[0];
+                    const rolId = user.roles.id;
+                    const userId = user.id;
+                    const estado = user.roles.estado;  // Verifica el estado
+
+                    // Verificar estado del usuario
+                    if (estado === "Inactivo") {
+                        alert("Tu cuenta está inactiva. Por favor, contacta al administrador.");
+                        return;
+                    }
+
+                    // Almacenar ID de usuario en localStorage
+                    localStorage.setItem('Id', userId);
+                    console.log('ID almacenado:', userId);
+
+                    // Redirección según el rol
+                    if (rolId === 1) {
+                        window.location.href = "../modules/administrador.html";
+                    } else if (rolId === 2) {
+                        window.location.href = "../modules/empleado.html";
+                    } else if (rolId === 3) {
+                        window.location.href = "../modules/cliente.html";
+                    } else {
+                        alert('Rol desconocido');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error en la solicitud:', error);
+                    alert('Ocurrió un error al iniciar sesión');
+                });
+        });
+    </script>
+
+</body>
+
+</html>

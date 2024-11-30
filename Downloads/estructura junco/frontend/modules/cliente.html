@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente - Cafetería</title>
+    <link rel="stylesheet" href="../src/assets/css/cliente.css">
+    
+    <!-- Incluimos Toastr CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a class="logo"><img src="../src/assets/img/logocafsenablanco.png" width="25%" height="100%" alt="Logo Cafetería"></a>
+        </div>
+        <p>Tu ID es: <span id="userId"></span></p>
+
+        <nav>
+            <ul>
+                <li><a href="#" onclick="showProfile(); return false;">Perfil de Usuario</a></li>
+                <li><a href="#" onclick="showMenu(); return false;">Ver Menú</a></li>
+                <li><a href="#" onclick="showCart(); return false;">Carrito de compras</a></li>
+                <li><a href="#" onclick="checkOrderStatus(); return false;">Pedidos</a></li>
+                <li><a href="#" onclick="showOrderHistory(); return false;">Historial de Pedidos</a></li>
+            </ul>
+        </nav>
+        <button class="logout-button" onclick="logout()">Cerrar Sesión</button>
+    </header>
+    <div class="container">
+        <h1 class="section-title">Panel de cliente</h1>
+        <div id="content">
+            <!-- Contenido dinámico de cada sección -->
+            <p>Bienvenido al panel de cliente. Selecciona una opción del menú para comenzar.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Onix. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Incluimos las librerías de Toastr JS y jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <div id="content"></div>
+    
+<!-- Modal para editar perfil -->
+<div id="editModal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">&times;</span>
+        <h2>Editar Perfil</h2>
+        <form id="editProfileForm">
+            <input type="hidden" id="editUserId" name="id">
+            <div class="form-group">
+                <label for="editName">Nombre:</label>
+                <input type="text" id="editName" name="name" readonly>
+            </div>
+            <div class="form-group">
+                <label for="editEmail">Email:</label>
+                <input type="email" id="editEmail" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="editPassword">Contraseña:</label>
+                <input type="password" id="editPassword" name="password">
+            </div>
+            <button type="submit" class="btn">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+    <script>
+ // API URLs
+const apiUrl = 'http://localhost:8080/api/v1/Usuarios/getUsuariosById/';
+const updateApiUrl = 'http://localhost:8080/api/v1/Usuarios/actualizarUsuario';
+
+// Obtener el ID de usuario desde localStorage
+const userId = localStorage.getItem('Id');
+if (userId) {
+    document.getElementById('userId').textContent = userId;
+} else {
+    console.error("No se encontró un valor para 'Id' en localStorage.");
+} 
+
+// Mostrar perfil de usuario
+async function showProfile() {
+    if (!userId) {
+        toastr.warning("No se puede cargar el perfil. El ID de usuario no está disponible.", "Advertencia");
+        return;
+    }
+
+    try {
+        const response = await fetch(apiUrl + userId);
+        if (!response.ok) {
+            throw new Error(`Error al obtener los datos del usuario: ${response.status}`);
+        }
+
+        const users = await response.json();
+        if (!users || users.length === 0 || !users[0].id || !users[0].nombre || !users[0].email) {
+            console.error('Los datos del usuario están incompletos:', users);
+            toastr.error("La respuesta de la API no contiene los datos esperados.", "Error");
+            return;
+        }
+
+        const user = users[0];
+
+        const profileContent = `
+            <div class="profile">
+                <h2>Perfil de Usuario</h2>
+                <div class="profile-info">
+                    <p><strong>ID:</strong> ${user.id}</p>
+                    <p><strong>Nombre:</strong> ${user.nombre}</p>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                </div>
+                <button class="btn" onclick="openEditModal(${user.id})">Editar Perfil</button>
+            </div>
+        `;
+
+        const contentElement = document.getElementById('content');
+        if (contentElement) {
+            contentElement.innerHTML = profileContent;
+        }
+
+    } catch (error) {
+        console.error(error);
+        toastr.error("No se pudo cargar el perfil del usuario.", "Error");
+    }
+} 
+
+// Función para abrir el modal de edición
+function openEditModal(userId) {
+    // Mostrar el modal
+    const modal = document.getElementById('editModal');
+    modal.style.display = 'block';
+
+    // Obtener los detalles del usuario y rellenar el formulario
+    fetch(apiUrl + userId)
+        .then(response => response.json())
+        .then(users => {
+            const user = users[0];
+            document.getElementById('editName').value = user.nombre;
+            document.getElementById('editEmail').value = user.email;
+            document.getElementById('editUserId').value = user.id;
+        })
+        .catch(error => {
+            toastr.error('Error al obtener los datos del usuario para edición.', 'Error');
+        });
+}
+
+// Función para cerrar el modal
+function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    modal.style.display = 'none';
+}
+
+// Manejo de la actualización de datos
+document.getElementById('editProfileForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const updatedUser = {
+        id: document.getElementById('editUserId').value,
+        nombre: document.getElementById('editName').value,
+        email: document.getElementById('editEmail').value,
+        // Aquí puedes agregar la contraseña si es necesario, en tu caso
+        clave: document.getElementById('editPassword') ? document.getElementById('editPassword').value : undefined
+    };
+
+    try {
+        // Llamada al API para actualizar el usuario
+        const response = await fetch(updateApiUrl, {
+            method: 'POST',  // Usamos POST en lugar de PUT
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatedUser),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al actualizar el perfil: ${response.status}`);
+        }
+
+        toastr.success('Perfil actualizado correctamente.', 'Éxito');
+        closeEditModal();
+        showProfile(); // Vuelve a cargar el perfil actualizado
+
+    } catch (error) {
+        console.error(error);
+        toastr.error('No se pudo actualizar el perfil.', 'Error');
+    }
+});
+
+let cart = []; // Carrito inicializado como un arreglo vacío
+
+// Llama a la función para mostrar el perfil al cargar la página
+showProfile();
+        function showMenu() {
+    const menuContent = `
+        <div id="productos" class="menu-section" style="display:block;">
+            <h2>Productos</h2>
+            <div class="search-bar" style="text-align:center;">
+                <input type="text" id="search-productos" placeholder="Buscar productos..." 
+                onkeyup="searchTable('productos-table', 'search-productos')" style="padding: 10px; width: 60%; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
+            </div>
+            <br><br>
+            <table id="productos-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f2f2f2; color: #333;">
+                        <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd;">ID</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd;">Nombre</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd;">Precio</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd;">Descripción</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 1px solid #ddd;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    `;
+    document.getElementById('content').innerHTML = menuContent;
+
+    // Fetch de datos desde la API
+    fetch('http://localhost:8080/api/v1/Productos/getProductos')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => llenarTablaProducto(data))
+        .catch(error => console.error('Error al obtener los datos:', error));
+}
+
+function llenarTablaProducto(data) {
+    const tabla = document.getElementById('productos-table').getElementsByTagName('tbody')[0];
+    tabla.innerHTML = ''; 
+    data.forEach(producto => {
+        const fila = tabla.insertRow();
+        fila.style.borderBottom = '1px solid #ddd';
+        fila.style.textAlign = 'center';
+        
+        const idCell = fila.insertCell(0);
+        const nombreCell = fila.insertCell(1);
+        const precioCell = fila.insertCell(2);
+        const descripcionCell = fila.insertCell(3);
+        const accionCell = fila.insertCell(4); // Nueva celda para acciones
+        
+        // Asegurarse de que los datos de la API contienen ID, nombre y precio
+        if (!producto.id || !producto.nombre || !producto.precio) {
+            console.warn('Producto con datos incompletos:', producto);
+            return;
+        }
+
+        idCell.textContent = producto.id; // Mostrar el ID del producto
+        nombreCell.textContent = producto.nombre;
+        precioCell.textContent = `$${producto.precio.toFixed(2)}`;
+        descripcionCell.textContent = producto.descripcion;
+
+        // Crear botón para añadir al carrito
+        const addButton = document.createElement('button');
+        addButton.textContent = 'Añadir al carrito';
+        addButton.style.padding = '8px 12px';
+        addButton.style.backgroundColor = '#4CAF50';
+        addButton.style.color = '#fff';
+        addButton.style.border = 'none';
+        addButton.style.borderRadius = '5px';
+        addButton.style.cursor = 'pointer';
+
+        // Pasar el ID del producto junto con nombre y precio
+        addButton.onclick = () => addToCart(producto.id, producto.nombre, producto.precio);
+
+        accionCell.appendChild(addButton);
+
+        [idCell, nombreCell, precioCell, descripcionCell, accionCell].forEach(cell => {
+            cell.style.padding = '10px';
+        });
+    });
+}
+
+        // Función de búsqueda en stock
+        function searchTable(tableId, searchInputId) {
+            const searchInput = document.getElementById(searchInputId).value.toLowerCase();
+            const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+
+            rows.forEach(row => {
+                const cells = row.getElementsByTagName('td');
+                const matches = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(searchInput));
+                row.style.display = matches ? '' : 'none';
+            });
+        }
+
+// Carrito global
+
+
+// Añadir producto al carrito
+function addToCart(id, product, price) {
+    const existingItem = cart.find(item => item.id === id);
+
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({ id, product, price, quantity: 1 });
+    }
+
+    toastr.success('Producto añadido al carrito.', 'Éxito');
+}
+
+
+
+
+
+
+
+// Función para agrupar productos iguales
+// Función para agrupar productos iguales
+function groupCartItems(cart) {
+    const groupedItems = {};
+
+    cart.forEach(item => {
+        if (groupedItems[item.product]) {
+            groupedItems[item.product].quantity += item.quantity;  // Suma la cantidad
+        } else {
+            groupedItems[item.product] = { ...item };
+        }
+    });
+
+    return Object.values(groupedItems);
+}
+
+
+// Función para aumentar la cantidad de un producto
+// Función para aumentar la cantidad de un producto
+function increaseQuantity(productName) {
+    cart.map((producto) => {
+        producto.product === productName
+        ? {...producto, quantity: producto.quantity++}
+        : producto;
+    })
+    const item = cart.find(item => item.product === productName);
+    console.log(item);
+    showCart(); // Actualizar el carrito
+}
+
+// Función para disminuir la cantidad de un producto
+function decreaseQuantity(productName) {
+    cart.map((producto) => {
+        producto.product === productName
+        ? {...producto, quantity: producto.quantity--}
+        : producto;
+    })
+    showCart(); // Actualizar el carrito
+}
+
+
+// Mostrar el carrito de compras con paginación y control de cantidad
+let cartPage = 1; // Nueva variable específica para el carrito
+const itemsPerPage = 5; // Productos por página en el carrito
+
+// Mostrar el carrito de compras con paginación
+// Mostrar el carrito de compras con paginación y control de cantidad
+// Mostrar el carrito de compras con paginación y control de cantidad
+function showCart() {
+    const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+    const cartContent = `
+        <section class="cart-section">
+            <h2>Carrito de compras</h2>
+            ${cart.length === 0 ? '<p>No tienes productos en el carrito.</p>' : '<ul class="cart-items">'}
+            ${cart.map(item => 
+                `<li class="cart-item">
+                    <div class="item-details">
+                        <span class="item-name">${item.product} x${item.quantity}</span>
+                        <span class="item-price">| $${(item.price * item.quantity).toLocaleString('es-ES', { minimumFractionDigits: 0 })}</span>
+                    </div>
+                    <div class="item-actions">
+                        <button onclick="decreaseQuantity('${item.product}')" class="quantity-button">-</button>
+                        <span class="item-quantity">${item.quantity}</span>
+                        <button onclick="increaseQuantity('${item.product}')" class="quantity-button">+</button>
+                        <button onclick="removeFromCart('${item.product}')" class="remove-button">Eliminar</button>
+                    </div>
+                </li>`
+            ).join('')}
+            ${cart.length > 0 ? '</ul><div class="total">Total: $' + totalAmount.toLocaleString('es-ES', { minimumFractionDigits: 0 }) + '</div><button class="order-button" onclick="placeOrder()">Realizar Pedido</button>' : ''}
+                                                                                                                                                                                                                                
+        </section>`;
+
+    document.getElementById('content').innerHTML = cartContent;
+}
+
+
+// Función para cambiar de página en el carrito
+function changeCartPage(page) {
+    cartPage = page;
+    showCart();
+}
+
+
+// Función para eliminar completamente un producto del carrito
+function removeFromCart(productName) {
+    cart = cart.filter(item => item.product !== productName); // Elimina completamente el producto
+    showCart(); // Vuelve a mostrar el carrito actualizado
+    toastr.info('Producto eliminado del carrito.', 'Información'); // Mensaje de confirmación
+}
+
+
+
+
+
+// Función para cambiar de página
+function changePage(page) {
+    currentPage = page;
+    showCart();
+}
+// Función para agrupar productos por cantidad en el pedido
+function groupCartItemsForOrder(cart) {
+    const groupedItems = {};
+
+    cart.forEach(item => {
+        if (groupedItems[item.product]) {
+            groupedItems[item.product].quantity += 1; // Incrementar la cantidad
+        } else {
+            groupedItems[item.product] = { ...item, quantity: 1 }; // Inicializar con cantidad 1
+        }
+    });
+
+    return Object.values(groupedItems); // Convertir el objeto en un array
+}
+
+
+
+
+// Función para cambiar de página en el carrito
+function changeCartPage(page) {
+    cartPage = page;
+    showCart();
+}
+
+
+// Función para eliminar completamente un producto del carrito
+function removeFromCart(productName) {
+    cart = cart.filter(item => item.product !== productName); // Elimina completamente el producto
+    showCart(); // Vuelve a mostrar el carrito actualizado
+    toastr.info('Producto eliminado del carrito.', 'Información'); // Mensaje de confirmación
+}
+
+
+
+
+
+// Función para cambiar de página
+function changePage(page) {
+    currentPage = page;
+    showCart();
+}
+
+// Función para agrupar productos por cantidad en el pedido
+function groupCartItemsForOrder(cart) {
+    const groupedItems = {};
+
+    cart.forEach(item => {
+        if (groupedItems[item.product]) {
+            groupedItems[item.product].quantity += 1; // Incrementar la cantidad
+        } else {
+            groupedItems[item.product] = { ...item, quantity: 1 }; // Inicializar con cantidad 1
+        }
+    });
+
+    return Object.values(groupedItems); // Convertir el objeto en un array
+}
+
+// Realizar pedido
+// Función para realizar un pedido
+function placeOrder() {
+    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+    const newOrder = cart.map((prospectOrder) => {
+        const totalPriceOrder = prospectOrder.price * prospectOrder.quantity;
+        return {
+            cantidad: prospectOrder.quantity,
+            precio: totalPriceOrder,
+            subtotal: prospectOrder.price, 
+            pedidos: {
+                fechaPedido: "2024-10-18",
+                estado: "En preparacion",
+                total: totalPriceOrder,
+                usuarios: {
+                    id: userId,
+                },
+            },
+            productos: {
+                id: prospectOrder.id,
+            },
+        };
+    });
+    console.log(newOrder);
+    orders.push(newOrder);
+    localStorage.setItem('orders', JSON.stringify(orders));
+
+    fetch("http://localhost:8080/api/v1/Pedidos/guardarPedidoDetalle", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newOrder)
+            
+
+    })
+
+        .then(hola => {
+            console.log(hola);
+            cart = [];  // Vaciar el carrito después de realizar el pedido
+            showCart(); // Actualizar la vista del carrito
+            checkOrderStatus(); // Mostrar el estado del pedido
+            /* 
+                <div class="order-item">
+                    <h3>Pedido #${order.pedidos.id}</h3>
+                    <ul>
+                        <li>${order.productos.nombre} x${order.cantidad} - $${parseFloat(order.precio).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</li>
+                    </ul>
+                    <p><strong>Total:</strong> $${parseFloat(order.subtotal).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
+                    <p><strong>Estado:</strong> <span>${order.pedidos.estado || "Desconocido"}</span></p>
+                </div>
+            */
+        })
+
+}
+
+
+
+
+
+
+// Ver estado de pedidos (sin imagen)
+// Variables de paginación para pedidos
+let currentOrderPage = 1;
+const orderItemsPerPage = 4;
+
+// Ver estado de pedidos con paginación
+// Ver estado de pedidos con paginación
+
+
+async function checkOrderStatus() {
+    try {
+        // Realiza la solicitud GET al endpoint de pedidos
+        const response = await fetch(`http://localhost:8080/api/v1/Pedidos/getPedidosSinEntregarCliente/${userId}`);
+        
+        if (!response.ok) {
+            throw new Error(`Error al obtener los pedidos: ${response.statusText}`);
+        }
+
+        const orders = await response.json();
+        console.log(orders);
+        
+        // Paginación
+        const totalOrderItems = orders.length;
+        const totalOrderPages = Math.ceil(totalOrderItems / orderItemsPerPage);
+        const startIndex = (currentOrderPage - 1) * orderItemsPerPage;
+        const endIndex = Math.min(startIndex + orderItemsPerPage, totalOrderItems);
+        const paginatedOrders = orders.slice(startIndex, endIndex);
+
+        let orderStatusContent = `
+            <section class="order-status-section">
+                <h2 class="section-title">Estado de los Pedidos</h2>
+                ${paginatedOrders.length === 0 ? '<p>No tienes pedidos realizados.</p>' : '<div class="order-status-grid">'}
+                ${paginatedOrders.map(order => `
+                    <div class="order-item">
+                        <h3>Pedido #${order.pedidos.id}</h3>
+                        <ul>
+                            <li><strong>Producto:</strong> ${order.productos.nombre}</li>
+                        </ul>
+                        <p><strong>Cantidad:</strong> <span>${order.cantidad}</span></p>
+                        <p><strong>Unidad:</strong> <span>$${parseFloat(order.subtotal).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
+                        <p><strong>Total:</strong> <span>$${parseFloat(order.precio).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
+                    </div>
+                `).join('')}
+                ${paginatedOrders.length > 0 ? '</div>' : ''}
+            </section>`;
+
+        // Controles de paginación
+        orderStatusContent += `
+            <div class="pagination">
+                ${currentOrderPage > 1 ? `<button onclick="changeOrderPage(${currentOrderPage - 1})">Anterior</button>` : ''}
+                ${Array.from({ length: totalOrderPages }, (_, i) => 
+                    `<button onclick="changeOrderPage(${i + 1})" ${currentOrderPage === i + 1 ? 'disabled' : ''}>${i + 1}</button>`
+                ).join('')}
+                ${currentOrderPage < totalOrderPages ? `<button onclick="changeOrderPage(${currentOrderPage + 1})">Siguiente</button>` : ''}
+            </div>`;
+
+        // Inyecta el contenido en el contenedor
+        document.getElementById('content').innerHTML = orderStatusContent;
+    } catch (error) {
+        console.error(error);
+        document.getElementById('content').innerHTML = `<p>Error al cargar los pedidos. Inténtalo más tarde.</p>`;
+    }
+}
+
+
+
+
+
+
+
+
+
+// Función para cambiar de página en los pedidos activos
+function changeOrderPage(page) {
+    currentOrderPage = page;
+    checkOrderStatus();
+}
+
+
+
+
+// Mostrar historial de pedidos con estilo encapsulado y paginación
+// Variables de paginación
+let currentHistoryPage = 1;
+const historyItemsPerPage = 6;
+
+// Función para mostrar el historial de pedidos con paginación
+// Función para mostrar el historial de pedidos con paginación
+// function showOrderHistory() {
+//     let orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
+//     const totalHistoryItems = orderHistory.length;
+//     const totalHistoryPages = Math.ceil(totalHistoryItems / historyItemsPerPage);
+
+//     const startIndex = (currentHistoryPage - 1) * historyItemsPerPage;
+//     const endIndex = Math.min(startIndex + historyItemsPerPage, totalHistoryItems);
+    
+//     const paginatedHistory = orderHistory.slice(startIndex, endIndex);
+
+//     let historyContent = `
+//         <section class="order-history-section">
+//             <h2>Historial de Pedidos</h2>
+//             <div class="order-history-grid">`; // Agregar contenedor para el grid
+
+//     paginatedHistory.forEach((order) => {
+//         const orderTotal = order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+//         historyContent += `
+//             <div class="order-history-item"> <!-- Cambiar a div para usar grid -->
+//                 <h3>Pedido #${order.id}</h3>
+//                 <ul>
+//                     ${order.items.map(item => 
+//                         `<li>${item.product} x${item.quantity} - $${item.price}</li>`
+//                     ).join('')}
+//                 </ul>
+//                 <p><strong>Total:</strong> $${orderTotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })}</p>
+//             </div>`; // Cambiar cierre a div
+//     });
+
+//     historyContent += `
+//             </div>
+//         </section>`; // Cerrar el contenedor del grid
+
+//     historyContent += `
+//         <div class="pagination">
+//             ${currentHistoryPage > 1 ? `<button onclick="changeHistoryPage(${currentHistoryPage - 1})">Anterior</button>` : ''}
+//             ${Array.from({ length: totalHistoryPages }, (_, i) => 
+//                 `<button onclick="changeHistoryPage(${i + 1})" ${currentHistoryPage === i + 1 ? 'disabled' : ''}>${i + 1}</button>`
+//             ).join('')}
+//             ${currentHistoryPage < totalHistoryPages ? `<button onclick="changeHistoryPage(${currentHistoryPage + 1})">Siguiente</button>` : ''}
+//         </div>
+//         </section>`;
+
+//     document.getElementById('content').innerHTML = historyContent;
+// }
+
+
+// // Función para cambiar de página en el historial de pedidos
+// function changeHistoryPage(page) {
+//     currentHistoryPage = page;
+//     showOrderHistory();
+// }
+
+
+
+// // Función para cambiar de página
+// function changePage(page) {
+//     currentPage = page;
+//     showOrderHistory();
+// }
+
+async function showOrderHistory() {
+    try {
+        // Realiza la solicitud GET al endpoint
+        const response = await fetch(`http://localhost:8080/api/v1/HistorialPedidos/getHistorialPedidosSinEntregarCliente/${userId}`);
+
+        // Verifica si la solicitud fue exitosa
+        if (!response.ok) {
+            throw new Error(`Error al obtener el historial de pedidos: ${response.statusText}`);
+        }
+
+        // Parseamos la respuesta como JSON
+        const orderHistory = await response.json();
+
+        // Filtra los pedidos con estado "Entregado"
+        const deliveredOrders = orderHistory.filter(order => order.estado === "Entregado");
+
+        const totalHistoryItems = deliveredOrders.length;
+        const totalHistoryPages = Math.ceil(totalHistoryItems / historyItemsPerPage);
+
+        const startIndex = (currentHistoryPage - 1) * historyItemsPerPage;
+        const endIndex = Math.min(startIndex + historyItemsPerPage, totalHistoryItems);
+
+        const paginatedHistory = deliveredOrders.slice(startIndex, endIndex);
+
+        let historyContent = `
+            <section class="order-history-section">
+                <h2>Historial de Pedidos</h2>
+                ${paginatedHistory.length === 0 ? '<p>No tienes pedidos entregados.</p>' : '<div class="order-history-grid">'}
+        `;
+
+        paginatedHistory.forEach(order => {
+            historyContent += `
+                <div class="order-history-item">
+                    <h3>Pedido #${order.id}</h3>
+                    <p><strong>Fecha:</strong> ${new Date(order.fechaPedido).toLocaleDateString('es-ES')}</p>
+                    <p><strong>Estado:</strong> ${order.estado}</p>
+                    <p><strong>Cliente:</strong> ${order.usuarios.nombre}</p>
+                </div>
+            `;
+        });
+
+        historyContent += `
+                </div>
+            </section>
+        `;
+
+        // Paginación
+        historyContent += `
+            <div class="pagination">
+                ${currentHistoryPage > 1 ? `<button onclick="changeHistoryPage(${currentHistoryPage - 1})">Anterior</button>` : ''}
+                ${Array.from({ length: totalHistoryPages }, (_, i) => 
+                    `<button onclick="changeHistoryPage(${i + 1})" ${currentHistoryPage === i + 1 ? 'disabled' : ''}>${i + 1}</button>`
+                ).join('')}
+                ${currentHistoryPage < totalHistoryPages ? `<button onclick="changeHistoryPage(${currentHistoryPage + 1})">Siguiente</button>` : ''}
+            </div>
+        `;
+
+        // Inyecta el contenido en el contenedor
+        document.getElementById('content').innerHTML = historyContent;
+    } catch (error) {
+        console.error(error);
+        document.getElementById('content').innerHTML = `<p>Error al cargar el historial de pedidos. Inténtalo más tarde.</p>`;
+    }
+}
+
+// Función para cambiar de página en el historial de pedidos
+function changeHistoryPage(page) {
+    currentHistoryPage = page;
+    showOrderHistory();
+}
+
+
+// Cerrar sesión
+function logout() {
+    toastr.info('Sesión cerrada.', 'Información');
+    window.location.href = "login.html"; // Redirige a la página de login
+}
+
+// Mostrar contenido de bienvenida al cargar la página
+window.onload = function() {
+    const contentDiv = document.getElementById('content');
+    contentDiv.innerHTML = `
+        <h2>Bienvenido al panel de cliente</h2>
+        <p>Selecciona una opción del menú para comenzar.</p>`;
+};
+</script>
+</body>
+</html>

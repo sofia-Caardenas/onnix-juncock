@@ -1,0 +1,79 @@
+body {
+    font-family: Arial, sans-serif;
+    background-image: url('../img/wooden-table-with-blurred-restaurant-scene.jpg');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.registro-container {
+    background-color: rgba(141, 98, 63, 0.9); /* Tono marrón con transparencia */
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    text-align: center;
+}
+
+.registro-container h2 {
+    margin-bottom: 20px;
+    color: #fff;
+    font-size: 24px;
+}
+
+.registro-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.registro-container label {
+    text-align: left;
+    color: #fff;
+    font-size: 14px;
+}
+
+.registro-container input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+}
+
+.registro-container input:focus {
+    border-color: #8d623f;
+    box-shadow: 0 0 4px rgba(141, 98, 63, 0.8);
+}
+
+.registro-container button {
+    padding: 12px;
+    background-color: #5f3310;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.registro-container button:hover {
+    background-color: #383b70;
+}
+
+.registro-container a.volver {
+    display: block;
+    margin-top: 20px;
+    text-decoration: none;
+    color: #fce7ca;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.registro-container a.volver:hover {
+    color: #ffffff;
+}
